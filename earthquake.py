@@ -1,30 +1,38 @@
-
 import streamlit as st
-import pickle
-import numpy as np
+import pandas as pd
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-# Load the trained model
-with open("best_model.pkl", "rb") as file:
-    model = pickle.load(file)
+st.title("🌸 Iris Flower Prediction App")
 
-# Streamlit app title
-st.title("🌸 Iris Flower Species Prediction App")
+# Load dataset
+iris = load_iris(as_frame=True)
+df = iris.frame
 
-st.write("Enter the flower measurements below to predict the Iris species:")
+st.write("### Sample Data", df.head())
 
-# Input fields for the features
-sepal_length = st.number_input("Sepal Length (cm)", min_value=0.0, max_value=10.0, value=5.1)
-sepal_width = st.number_input("Sepal Width (cm)", min_value=0.0, max_value=10.0, value=3.5)
-petal_length = st.number_input("Petal Length (cm)", min_value=0.0, max_value=10.0, value=1.4)
-petal_width = st.number_input("Petal Width (cm)", min_value=0.0, max_value=10.0, value=0.2)
+# Train model
+X = df.drop("target", axis=1)
+y = df["target"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=12)
+model = LogisticRegression(max_iter=200)
+model.fit(X_train, y_train)
 
-# Prediction button
-if st.button("🔍 Predict"):
-    # Prepare the input array
-    input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
+# Evaluate
+accuracy = accuracy_score(y_test, model.predict(X_test))
+st.write(f"✅ Model Accuracy: **{accuracy:.2f}**")
 
-    # Make prediction
-    prediction = model.predict(input_data)
+# User input
+st.write("### Enter flower measurements:")
+sl = st.slider("Sepal Length (cm)", 4.0, 8.0, 5.1)
+sw = st.slider("Sepal Width (cm)", 2.0, 4.5, 3.5)
+pl = st.slider("Petal Length (cm)", 1.0, 7.0, 1.4)
+pw = st.slider("Petal Width (cm)", 0.1, 2.5, 0.2)
 
-    # Display result
-    st.success(f"🌼 The predicted Iris species is: **{prediction[0]}**")
+# Predict
+if st.button("Predict Species"):
+    pred = model.predict([[sl, sw, pl, pw]])
+    species = iris.target_names[pred[0]]
+    st.success(f"🌼 Predicted Iris Species: **{species}**")
